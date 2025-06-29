@@ -19,9 +19,7 @@ def get_date(date_info: str) -> str:
 
 
 
-card_number = "Visa Platinum 7000792289606361"
-account_number = "Счет 73654108430135874305"
+number_acc_or_card = input('Введите номер счета или номер карты')
 date_info = "2024-03-11T02:26:18.671407"
-#print(get_mask_card_number(card_number))
-#print(get_mask_account(account_number))
+print(mask_account_card(number_acc_or_card ))
 print(get_date(date_info))
