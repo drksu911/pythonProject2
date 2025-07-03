@@ -1,4 +1,4 @@
-from src.masks import get_mask_card_number, get_mask_account
+from src.masks import get_mask_account, get_mask_card_number
 
 
 def mask_account_card(number_acc_or_card: str) -> str:
@@ -9,7 +9,7 @@ def mask_account_card(number_acc_or_card: str) -> str:
         masked_data = get_mask_card_number(number_acc_or_card)
 
     return masked_data
-d
+
 
 def get_date(date_info: str) -> str:
     """Функция форматирования даты ДД.ММ.ГГГГ"""
