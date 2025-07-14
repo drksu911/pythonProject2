@@ -20,7 +20,7 @@ def get_date(date_info: str) -> str:
 
 
 print("Введите номер счета или номер карты", sep="\n")
-users_data = input()
-date_info = "2024-03-11T02:26:18.671407"
-print(mask_account_card(users_data))
-print(get_date(date_info))
+user_data = input()
+info_of_date = "2024-03-11T02:26:18.671407"
+print(mask_account_card(user_data))
+print(get_date(info_of_date))

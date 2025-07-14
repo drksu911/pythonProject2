@@ -1,4 +1,4 @@
-date_list = [
+date_lists = [
     {"id": 41428829, "state": "EXECUTED", "date": "2019-07-03T18:35:29.512364"},
     {"id": 939719570, "state": "EXECUTED", "date": "2018-06-30T02:08:58.425572"},
     {"id": 594226727, "state": "CANCELED", "date": "2018-09-12T21:27:25.241689"},
@@ -24,12 +24,12 @@ def sort_by_date(date_list: list[dict], reverse: bool = True) -> list[dict]:
 
 
 print("Функция возвращает словари по заданному значению")
-print(filter_by_state(date_list))
-print(filter_by_state(date_list, "CANCELED"))
+print(filter_by_state(date_lists))
+print(filter_by_state(date_lists, "CANCELED"))
 
 
 print("Функция сортирует по убыванию (новые - старые)")
-print(sort_by_date(date_list))
+print(sort_by_date(date_lists))
 
 print("Функция сортирует по возрастанию (старые - новые)")
-print(sort_by_date(date_list, reverse=False))
+print(sort_by_date(date_lists, reverse=False))
