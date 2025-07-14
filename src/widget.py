@@ -1,12 +1,12 @@
 from src.masks import get_mask_account, get_mask_card_number
 
 
-def mask_account_card(number_acc_or_card: str) -> str:
+def mask_account_card(users_data: str) -> str:
     """Функция обработки информации о картах и счетах"""
-    if number_acc_or_card.startswith("Счет"):
-        masked_data = get_mask_account(number_acc_or_card)
+    if users_data.startswith("Счет"):
+        masked_data = get_mask_account(users_data)
     else:
-        masked_data = get_mask_card_number(number_acc_or_card)
+        masked_data = get_mask_card_number(users_data)
 
     return masked_data
 
@@ -20,7 +20,7 @@ def get_date(date_info: str) -> str:
 
 
 print("Введите номер счета или номер карты", sep="\n")
-number_acc_or_card = input()
+users_data = input()
 date_info = "2024-03-11T02:26:18.671407"
-print(mask_account_card(number_acc_or_card))
+print(mask_account_card(users_data))
 print(get_date(date_info))
