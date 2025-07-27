@@ -1,3 +1,6 @@
+from datetime import datetime
+from typing import Dict, List
+
 date_lists = [
     {"id": 41428829, "state": "EXECUTED", "date": "2019-07-03T18:35:29.512364"},
     {"id": 939719570, "state": "EXECUTED", "date": "2018-06-30T02:08:58.425572"},
@@ -15,12 +18,27 @@ def filter_by_state(date_list: list[dict], state: str = "EXECUTED") -> list[dict
     return new_list
 
 
-def sort_by_date(date_list: list[dict], reverse: bool = True) -> list[dict]:
-    """Сортировка по дате"""
+def filter_by_states(data: List[Dict], state: str = "EXECUTED") -> List[Dict]:
+    """Фильтрует список словарей по значению ключа 'state'"""
+    if not isinstance(data, list):
+        raise TypeError("Входные данные должны быть списком")
 
-    sorted_list = date_list.copy()
-    sorted_list.sort(key=lambda x: x["date"], reverse=reverse)
-    return sorted_list
+    return [
+        item for item in data if isinstance(item, dict) and item.get("state") == state
+    ]
+
+
+def sort_by_date(data: List[Dict], reverse: bool = True) -> List[Dict]:
+    """Сортирует список словарей по дате"""
+    if not isinstance(data, list):
+        raise TypeError("Входные данные должны быть списком")
+
+    try:
+        return sorted(
+            data, key=lambda x: datetime.fromisoformat(x["date"]), reverse=reverse
+        )
+    except (KeyError, ValueError) as e:
+        raise ValueError(f"Некорректный формат даты: {e}")
 
 
 print("Функция возвращает словари по заданному значению")
