@@ -1,3 +1,5 @@
+from typing import Generator, Iterator
+
 transactions = [
     {
         "id": 939719570,
@@ -61,8 +63,6 @@ transactions = [
     },
 ]
 
-from typing import Generator, Iterator
-
 
 def filter_by_currency(transactions: list[dict], currency: str) -> Iterator[dict]:
     """
@@ -72,8 +72,11 @@ def filter_by_currency(transactions: list[dict], currency: str) -> Iterator[dict
     :param currency: Код валюты для фильтрации
     :return: Итератор транзакций с указанной валютой
     """
-    return (tx for tx in transactions
-            if tx["operationAmount"]["currency"]["code"] == currency)
+    return (
+        tx
+        for tx in transactions
+        if tx["operationAmount"]["currency"]["code"] == currency
+    )
 
 
 def transaction_descriptions(transactions: list[dict]) -> Generator[str, None, None]:

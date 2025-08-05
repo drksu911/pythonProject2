@@ -1,0 +1,8 @@
+[2025-08-05 21:34:22.680020] INFO: Function 'my_function' started.
+[2025-08-05 21:34:22.682355] INFO: Function 'my_function' finished successfully in 0:00:00.002335. Result: 3
+[2025-08-05 21:34:34.472665] INFO: Function 'my_function' started.
+[2025-08-05 21:34:34.473779] INFO: Function 'my_function' finished successfully in 0:00:00.001114. Result: 3
+[2025-08-05 21:41:14.366254] INFO: Function 'my_function' started.
+[2025-08-05 21:41:14.367298] INFO: Function 'my_function' finished successfully in 0:00:00.001044. Result: 3
+[2025-08-05 21:52:43.109598] INFO: Function 'my_function' started.
+[2025-08-05 21:52:43.111554] INFO: Function 'my_function' finished successfully in 0:00:00.001956. Result: 3
