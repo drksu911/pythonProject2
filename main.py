@@ -1,8 +1,10 @@
 import os
 import logging
+import pandas as pd
+
 from src.utils import load_transactions
 from src.masks import get_mask_card_number, get_mask_account
-
+from file_reader import read_csv_transactions, read_excel_transactions
 
 def setup_logging() -> None:
     """Настройка логирования для основного приложения"""
@@ -172,6 +174,47 @@ def demonstrate_transaction_processing() -> None:
     logger.info("Обработка транзакций завершена\n")
 
 
+def process_file_based_transactions():
+    """
+    Обрабатывает транзакции из файлов CSV и Excel.
+    Эта функция может быть интегрирована в существующую логику main.
+    """
+    try:
+        # Формируем пути к файлам
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        data_dir = os.path.join(base_dir, 'data')
+
+        csv_path = os.path.join(data_dir, 'transactions.csv')
+        excel_path = os.path.join(data_dir, 'transactions.xlsx')
+
+        all_transactions = []
+
+        # Обработка CSV файла, если он существует
+        if os.path.exists(csv_path):
+            csv_transactions = read_csv_transactions(csv_path)
+            print(f"Прочитано {len(csv_transactions)} транзакций из CSV")
+            all_transactions.extend(csv_transactions)
+
+            # Интегрируйте с вашей существующей логикой обработки
+            # process_transactions(csv_transactions, source="CSV")
+
+        # Обработка Excel файла, если он существует
+        if os.path.exists(excel_path):
+            excel_transactions = read_excel_transactions(excel_path)
+            print(f"Прочитано {len(excel_transactions)} транзакций из Excel")
+            all_transactions.extend(excel_transactions)
+
+            # Интегрируйте с вашей существующей логикой обработки
+            # process_transactions(excel_transactions, source="Excel")
+
+        # Возвращаем все транзакции для дальнейшей обработки
+        return all_transactions
+
+    except Exception as e:
+        print(f"Ошибка при обработке файловых транзакций: {e}")
+        return []
+
+
 def main() -> None:
     """Основная функция приложения"""
     logger = setup_logging()
@@ -197,7 +240,12 @@ def main() -> None:
     except Exception as e:
         logger.critical(f"Критическая ошибка в основном приложении: {e}")
         raise
+    file_transactions = process_file_based_transactions()
 
+    if file_transactions:
+        print(f"Всего обработано {len(file_transactions)} транзакций из файлов")
 
 if __name__ == "__main__":
     main()
+
+
