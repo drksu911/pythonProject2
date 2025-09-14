@@ -1,69 +1,90 @@
-from datetime import datetime
-from typing import Union
+from src.masks import get_mask_account, get_mask_card_number
 
 
-def mask_account_card(number_acc_or_card: str) -> str:
-    """Функция обработки информации о картах и счетах"""
-    if not isinstance(number_acc_or_card, str):
-        raise ValueError("Входные данные должны быть строкой")
+def mask_account_card(account_info: str) -> str:
+    """
+    Маскирует номер карты или счета в строке с информацией об аккаунте.
 
-    cleaned = number_acc_or_card.strip()
-    if not cleaned:
-        raise ValueError("Пустая строка")
+    Args:
+        account_info (str): Строка с информацией об аккаунте в формате
+                           "Тип Номер" (например, "Visa Platinum 7000792289606361")
 
-    parts = cleaned.split()
+    Returns:
+        str: Строка с замаскированным номером карты или счета.
 
-    if cleaned.startswith("Счет"):
-        if len(parts) < 2:
-            raise ValueError("Не указан номер счета")
+    Raises:
+        ValueError: Если не удается извлечь номер из строки.
+    """
+    if not account_info or not account_info.strip():
+        raise ValueError("Строка с информацией об аккаунте не может быть пустой")
 
-        account_num = parts[-1]
+    # Разделяем строку на части
+    parts = account_info.split()
 
-        if not account_num.isdigit():
-            raise ValueError("Номер счета должен содержать только цифры")
+    if len(parts) < 2:
+        raise ValueError("Строка должна содержать тип и номер карты/счета")
 
-        if len(account_num) < 4:
-            raise ValueError("Номер счета должен содержать минимум 4 цифры")
+    # Извлекаем номер (последняя часть строки)
+    number_str = parts[-1]
 
-        return f"{' '.join(parts[:-1])} **{account_num[-4:]}"
+    # Проверяем, что номер состоит только из цифр
+    if not number_str.isdigit():
+        raise ValueError("Строка должна содержать тип и номер карты/счета")
 
+    # Определяем тип аккаунта (все части кроме последней)
+    account_type = " ".join(parts[:-1])
+
+    # Определяем, является ли номер счетом или картой
+    if account_type.lower() == "счет":
+        masked_number = get_mask_account(number_str)
     else:
-        if len(parts) < 2:
-            raise ValueError("Не указан номер карты")
+        # Проверяем, что номер карты имеет правильную длину
+        if len(number_str) != 16:
+            raise ValueError("Номер карты должен содержать 16 цифр")
+        masked_number = get_mask_card_number(number_str)
 
-        card_num = parts[-1]
-
-        if not card_num.isdigit():
-            raise ValueError("Номер карты должен содержать только цифры")
-
-        if len(card_num) != 16:
-            raise ValueError("Номер карты должен содержать ровно 16 цифр")
-
-        return f"{' '.join(parts[:-1])} {card_num[:4]} {card_num[4:6]}** **** {card_num[-4:]}"
+    return f"{account_type} {masked_number}"
 
 
-def get_date(date_info: Union[str, None]) -> str:
+def get_date(date_string: str) -> str:
     """
-    Функция форматирования даты из строки в формате ДД.ММ.ГГГГ
-    Обрабатывает даты в формате ISO (YYYY-MM-DD или YYYY-MM-DDTHH:MM:SS)
+    Преобразует дату из формата ISO в формат ДД.ММ.ГГГГ.
+
+    Args:
+        date_string (str): Дата в формате ISO (например, "2024-03-11T02:26:18.671407")
+
+    Returns:
+        str: Дата в формате ДД.ММ.ГГГГ (например, "11.03.2024")
+
+    Raises:
+        ValueError: Если строка не соответствует формату ISO.
     """
-    if date_info is None:
-        raise AttributeError("Дата не может быть None")
+    if not date_string or "T" not in date_string:
+        raise ValueError("Дата должна быть в формате ISO с разделителем 'T'")
 
-    date_str = date_info.strip()
+    # Разделяем дату и время
+    date_time_parts = date_string.split("T")
 
-    if not date_str:
-        raise ValueError("Пустая строка даты")
+    if len(date_time_parts) != 2 or not date_time_parts[0] or not date_time_parts[1]:
+        raise ValueError("Некорректный формат даты")
 
     try:
-        # Пробуем распарсить дату в ISO формате
-        dt = datetime.fromisoformat(date_str)
-        return dt.strftime("%d.%m.%Y")
-    except ValueError:
-        raise ValueError(
-            "Неверный формат даты. Ожидается ISO формат (YYYY-MM-DD или YYYY-MM-DDTHH:MM:SS)"
-        )
+        # Извлекаем часть с датой
+        date_part = date_time_parts[0]
 
+        # Разделяем год, месяц и день
+        date_components = date_part.split("-")
 
-print(mask_account_card("Visa 1234567890123456"))
-print(get_date("2023-12-31T23:59:59"))
+        if len(date_components) != 3:
+            raise ValueError("Некорректный формат даты")
+
+        year, month, day = date_components
+
+        # Проверяем, что компоненты даты являются числами
+        if not (year.isdigit() and month.isdigit() and day.isdigit()):
+            raise ValueError("Некорректный формат даты")
+
+        # Форматируем в нужный вид
+        return f"{day}.{month}.{year}"
+    except (IndexError, ValueError):
+        raise ValueError("Некорректный формат даты")
