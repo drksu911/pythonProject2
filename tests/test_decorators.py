@@ -1,95 +1,127 @@
+import os
 import pytest
 from src.decorators import log
 
 
-@log()
-def add(x, y):
-    return x + y
+class TestDecorators:
+    """Тесты для модуля decorators."""
 
+    def test_log_to_console_success(self, capsys):
+        """Тестирование логирования успешного выполнения в консоль."""
 
-@log()
-def divide(x, y):
-    return x / y
+        @log()
+        def test_func(x, y):
+            return x + y
 
+        result = test_func(2, 3)
 
-@log(filename="test.log")
-def multiply(x, y):
-    return x * y
+        # Проверяем результат выполнения
+        assert result == 5
 
+        # Проверяем вывод в консоль
+        captured = capsys.readouterr()
+        assert "test_func ok" in captured.out
+        assert "error" not in captured.out
 
-@log(filename="test.log")
-def get_item(items, index):
-    return items[index]
+    def test_log_to_console_error(self, capsys):
+        """Тестирование логирования ошибки в консоль."""
 
+        @log()
+        def test_func():
+            raise ValueError("Test error")
 
-def test_add_success(capsys):
-    """
-    Тест успешного выполнения функции add с логированием в консоль.
-    """
-    result = add(5, 3)
+        # Проверяем, что исключение пробрасывается
+        with pytest.raises(ValueError):
+            test_func()
 
-    assert result == 8
+        # Проверяем вывод в консоль
+        captured = capsys.readouterr()
+        assert "test_func error: ValueError" in captured.out
+        assert "Inputs: (), {}" in captured.out
 
-    captured = capsys.readouterr()
-    assert "INFO: Function 'add' started." in captured.out
-    assert "INFO: Function 'add' finished successfully" in captured.out
-    assert "Result: 8" in captured.out
+    def test_log_to_file_success(self, tmp_path):
+        """Тестирование логирования успешного выполнения в файл."""
+        log_file = tmp_path / "test_log.txt"
 
+        @log(filename=str(log_file))
+        def test_func(x, y):
+            return x * y
 
-def test_divide_error(capsys):
-    """
-    Тест выполнения функции divide с ошибкой ZeroDivisionError и логированием в консоль.
-    """
-    with pytest.raises(ZeroDivisionError):
-        divide(10, 0)
+        result = test_func(4, 5)
 
-    captured = capsys.readouterr()
-    assert "INFO: Function 'divide' started." in captured.out
-    assert "ERROR: Function 'divide' failed." in captured.out
-    assert "Error type: ZeroDivisionError" in captured.out
-    assert "Arguments: args=(10, 0), kwargs={}" in captured.out
+        # Проверяем результат выполнения
+        assert result == 20
 
+        # Проверяем запись в файл
+        assert log_file.exists()
+        content = log_file.read_text(encoding="utf-8")
+        assert "test_func ok" in content
+        assert "error" not in content
 
-def test_multiply_to_file(tmp_path):
-    """
-    Тест успешного выполнения функции multiply с логированием в файл.
-    Используется фикстура tmp_path для создания временного файла.
-    """
-    log_file = tmp_path / "test.log"
+    def test_log_to_file_error(self, tmp_path):
+        """Тестирование логирования ошибки в файл."""
+        log_file = tmp_path / "test_log.txt"
 
-    @log(filename=log_file)
-    def multiply_temp(x, y):
-        return x * y
+        @log(filename=str(log_file))
+        def test_func(a, b=10):
+            raise RuntimeError("Custom error")
 
-    result = multiply_temp(4, 5)
+        # Проверяем, что исключение пробрасывается
+        with pytest.raises(RuntimeError):
+            test_func(1, b=2)
 
-    assert result == 20
+        # Проверяем запись в файл
+        assert log_file.exists()
+        content = log_file.read_text(encoding="utf-8")
+        assert "test_func error: RuntimeError" in content
+        assert "Inputs: (1,), {'b': 2}" in content
 
-    with open(log_file, "r") as f:
-        log_content = f.read()
+    def test_log_preserves_function_metadata(self):
+        """Тестирование сохранения метаданных функции."""
 
-    assert "INFO: Function 'multiply_temp' started." in log_content
-    assert "INFO: Function 'multiply_temp' finished successfully" in log_content
-    assert "Result: 20" in log_content
+        @log()
+        def test_func(x: int, y: int) -> int:
+            """Test function for decorator"""
+            return x + y
 
+        # Проверяем сохранение метаданных
+        assert test_func.__name__ == "test_func"
+        assert test_func.__doc__ == "Test function for decorator"  # Убрана точка в ожидаемом значении
+        assert test_func.__annotations__ == {"x": int, "y": int, "return": int}
 
-def test_get_item_error_to_file(tmp_path):
-    """
-    Тест выполнения функции get_item с ошибкой IndexError и логированием в файл.
-    """
-    log_file = tmp_path / "test_error.log"
+    def test_log_multiple_calls(self, tmp_path):
+        """Тестирование множественных вызовов с записью в файл."""
+        log_file = tmp_path / "multi_log.txt"
 
-    @log(filename=log_file)
-    def get_item_temp(items, index):
-        return items[index]
+        @log(filename=str(log_file))
+        def test_func(x):
+            return x ** 2
 
-    with pytest.raises(IndexError):
-        get_item_temp([1, 2, 3], 5)
+        # Вызываем функцию несколько раз
+        results = [test_func(i) for i in range(3)]
 
-    with open(log_file, "r") as f:
-        log_content = f.read()
+        # Проверяем результаты
+        assert results == [0, 1, 4]
 
-    assert "INFO: Function 'get_item_temp' started." in log_content
-    assert "ERROR: Function 'get_item_temp' failed." in log_content
-    assert "Error type: IndexError" in log_content
-    assert "Arguments: args=([1, 2, 3], 5), kwargs={}" in log_content
+        # Проверяем записи в файле
+        content = log_file.read_text(encoding="utf-8")
+        lines = content.strip().split("\n")
+        assert len(lines) == 3
+        assert all("test_func ok" in line for line in lines)
+
+    def test_log_with_different_arguments(self, capsys):
+        """Тестирование с различными типами аргументов."""
+
+        @log()
+        def test_func(a, b=10, *args, **kwargs):
+            return f"{a}-{b}-{args}-{kwargs}"
+
+        result = test_func(1, 2, 3, 4, key="value")
+
+        # Проверяем результат
+        assert "1-2-(3, 4)-{'key': 'value'}" in result
+
+        # Проверяем, что в логе нет ошибок
+        captured = capsys.readouterr()
+        assert "test_func ok" in captured.out
+        assert "error" not in captured.out

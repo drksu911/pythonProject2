@@ -1,78 +1,111 @@
-import unittest
-from unittest.mock import patch, MagicMock
-from file_reader import read_csv_transactions, read_excel_transactions
+import pytest
 import pandas as pd
-import os
+from unittest.mock import patch, MagicMock
+from src.file_reader import read_csv_file, read_excel_file
 
 
-class TestFileReader(unittest.TestCase):
+class TestFileReader:
+    """Тесты для модуля file_reader."""
 
-    @patch('pandas.read_csv')
-    @patch('os.path.exists', return_value=True)
-    def test_read_csv_transactions_success(self, mock_exists, mock_read_csv):
-        """Тест успешного чтения CSV файла с использованием pandas"""
-        # Создаем mock DataFrame с реальными данными
-        test_data = [
-            {'id': 650703, 'state': 'EXECUTED', 'amount': 16210},
-            {'id': 650704, 'state': 'PENDING', 'amount': 5000}
+    @pytest.fixture
+    def sample_transactions(self):
+        """Фикстура с примером транзакций."""
+        return [
+            {
+                "id": 441945886,
+                "state": "EXECUTED",
+                "date": "2019-08-26T10:50:58.294041",
+                "operationAmount": {
+                    "amount": "31957.58",
+                    "currency": {
+                        "name": "руб.",
+                        "code": "RUB"
+                    }
+                },
+                "description": "Перевод организации",
+                "from": "Maestro 1596837868705199",
+                "to": "Счет 64686473678894779589"
+            }
         ]
-        mock_df = pd.DataFrame(test_data)
+
+    @patch('src.file_reader.pd.read_csv')
+    def test_read_csv_file_success(self, mock_read_csv, sample_transactions):
+        """Тестирование успешного чтения CSV-файла."""
+        # Мокируем DataFrame
+        mock_df = MagicMock()
+        mock_df.to_dict.return_value = sample_transactions
         mock_read_csv.return_value = mock_df
 
-        # Вызываем тестируемую функцию
-        result = read_csv_transactions('test.csv')
+        result = read_csv_file("test.csv")
 
-        # Проверяем результаты
-        self.assertEqual(len(result), 2)
-        self.assertEqual(result[0]['id'], 650703)
-        self.assertEqual(result[0]['state'], 'EXECUTED')
-        self.assertEqual(result[1]['amount'], 5000)
+        # Проверяем результат
+        assert result == sample_transactions
+        mock_read_csv.assert_called_once_with("test.csv")
 
-        # Проверяем, что функции были вызваны с правильными параметрами
-        mock_exists.assert_called_once_with('test.csv')
-        mock_read_csv.assert_called_once_with('test.csv')
+    @patch('src.file_reader.pd.read_csv')
+    def test_read_csv_file_not_found(self, mock_read_csv):
+        """Тестирование чтения несуществующего CSV-файла."""
+        mock_read_csv.side_effect = FileNotFoundError("File not found")
 
-    @patch('pandas.read_excel')
-    @patch('os.path.exists', return_value=True)
-    def test_read_excel_transactions_success(self, mock_exists, mock_read_excel):
-        """Тест успешного чтения Excel файла с использованием pandas"""
-        # Создаем mock DataFrame с реальными данными
-        test_data = [
-            {'id': 650705, 'state': 'EXECUTED', 'amount': 7500},
-            {'id': 650706, 'state': 'CANCELED', 'amount': 3000}
-        ]
-        mock_df = pd.DataFrame(test_data)
+        result = read_csv_file("nonexistent.csv")
+
+        assert result == []
+
+    @patch('src.file_reader.pd.read_csv')
+    def test_read_csv_file_empty(self, mock_read_csv):
+        """Тестирование чтения пустого CSV-файла."""
+        mock_read_csv.side_effect = pd.errors.EmptyDataError("No columns to parse")
+
+        result = read_csv_file("empty.csv")
+
+        assert result == []
+
+    @patch('src.file_reader.pd.read_csv')
+    def test_read_csv_file_parse_error(self, mock_read_csv):
+        """Тестирование чтения CSV-файла с ошибкой парсинга."""
+        mock_read_csv.side_effect = pd.errors.ParserError("Error parsing file")
+
+        result = read_csv_file("invalid.csv")
+
+        assert result == []
+
+    @patch('src.file_reader.pd.read_excel')
+    def test_read_excel_file_success(self, mock_read_excel, sample_transactions):
+        """Тестирование успешного чтения Excel-файла."""
+        # Мокируем DataFrame
+        mock_df = MagicMock()
+        mock_df.to_dict.return_value = sample_transactions
         mock_read_excel.return_value = mock_df
 
-        # Вызываем тестируемую функцию
-        result = read_excel_transactions('test.xlsx')
+        result = read_excel_file("test.xlsx")
 
-        # Проверяем результаты
-        self.assertEqual(len(result), 2)
-        self.assertEqual(result[0]['id'], 650705)
-        self.assertEqual(result[0]['state'], 'EXECUTED')
-        self.assertEqual(result[1]['amount'], 3000)
+        # Проверяем результат
+        assert result == sample_transactions
+        mock_read_excel.assert_called_once_with("test.xlsx")
 
-        # Проверяем, что функции были вызваны с правильными параметрами
-        mock_exists.assert_called_once_with('test.xlsx')
-        mock_read_excel.assert_called_once_with('test.xlsx')
+    @patch('src.file_reader.pd.read_excel')
+    def test_read_excel_file_not_found(self, mock_read_excel):
+        """Тестирование чтения несуществующего Excel-файла."""
+        mock_read_excel.side_effect = FileNotFoundError("File not found")
 
-    @patch('os.path.exists', return_value=False)
-    def test_read_csv_transactions_file_not_found(self, mock_exists):
-        """Тест обработки отсутствующего CSV файла"""
-        with self.assertRaises(FileNotFoundError):
-            read_csv_transactions('nonexistent.csv')
+        result = read_excel_file("nonexistent.xlsx")
 
-        mock_exists.assert_called_once_with('nonexistent.csv')
+        assert result == []
 
-    @patch('os.path.exists', return_value=False)
-    def test_read_excel_transactions_file_not_found(self, mock_exists):
-        """Тест обработки отсутствующего Excel файла"""
-        with self.assertRaises(FileNotFoundError):
-            read_excel_transactions('nonexistent.xlsx')
+    @patch('src.file_reader.pd.read_excel')
+    def test_read_excel_file_empty(self, mock_read_excel):
+        """Тестирование чтения пустого Excel-файла."""
+        mock_read_excel.side_effect = pd.errors.EmptyDataError("No columns to parse")
 
-        mock_exists.assert_called_once_with('nonexistent.xlsx')
+        result = read_excel_file("empty.xlsx")
 
+        assert result == []
 
-if __name__ == '__main__':
-    unittest.main()
+    @patch('src.file_reader.pd.read_excel')
+    def test_read_excel_file_general_error(self, mock_read_excel):
+        """Тестирование чтения Excel-файла с общей ошибкой."""
+        mock_read_excel.side_effect = Exception("General error")
+
+        result = read_excel_file("error.xlsx")
+
+        assert result == []

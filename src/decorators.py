@@ -1,65 +1,60 @@
-import datetime
 import functools
+from datetime import datetime
+from typing import Any, Callable, Optional
 
 
-def log(filename=None):
+def log(filename: Optional[str] = None) -> Callable:
     """
-    Декоратор для логирования выполнения функции.
+    Декоратор для логирования работы функций.
 
+    Args:
+        filename (Optional[str]): Имя файла для записи логов.
+                                 Если не указано, логи выводятся в консоль.
+
+    Returns:
+        Callable: Декорированная функция
     """
 
-    def decorator(func):
+    def decorator(func: Callable) -> Callable:
         @functools.wraps(func)
-        def wrapper(*args, **kwargs):
-            log_message = ""
-            start_time = datetime.datetime.now()
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
+            # Формируем информацию о вызове
+            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            func_name = func.__name__
+            inputs = f"Inputs: {args}, {kwargs}"
 
             try:
-                log_message += (
-                    f"[{start_time}] INFO: Function '{func.__name__}' started."
-                )
-                if filename:
-                    with open(filename, "a") as f:
-                        f.write(log_message + "\n")
-                else:
-                    print(log_message)
+                # Вызываем оригинальную функцию
                 result = func(*args, **kwargs)
 
-                end_time = datetime.datetime.now()
-                execution_time = end_time - start_time
-                log_message = (
-                    f"[{end_time}] INFO: Function '{func.__name__}' finished successfully in {execution_time}. "
-                    f"Result: {result}"
-                )
+                # Формируем сообщение об успехе
+                success_message = f"{timestamp} - {func_name} ok\n"
+
+                # Логируем результат
                 if filename:
-                    with open(filename, "a") as f:
-                        f.write(log_message + "\n")
+                    with open(filename, "a", encoding="utf-8") as f:
+                        f.write(success_message)
                 else:
-                    print(log_message)
+                    print(success_message, end="")
+
                 return result
 
             except Exception as e:
-                end_time = datetime.datetime.now()
-                log_message = (
-                    f"[{end_time}] ERROR: Function '{func.__name__}' failed. "
-                    f"Error type: {type(e).__name__}. "
-                    f"Arguments: args={args}, kwargs={kwargs}"
+                # Формируем сообщение об ошибке
+                error_message = (
+                    f"{timestamp} - {func_name} error: {type(e).__name__}. {inputs}\n"
                 )
+
+                # Логируем ошибку
                 if filename:
-                    with open(filename, "a") as f:
-                        f.write(log_message + "\n")
+                    with open(filename, "a", encoding="utf-8") as f:
+                        f.write(error_message)
                 else:
-                    print(log_message)
+                    print(error_message, end="")
+
+                # Пробрасываем исключение дальше
                 raise
 
         return wrapper
 
     return decorator
-
-
-@log(filename="mylog.txt")
-def my_function(x, y):
-    return x + y
-
-
-my_function(1, 2)

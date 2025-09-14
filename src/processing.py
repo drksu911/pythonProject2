@@ -1,53 +1,34 @@
-from datetime import datetime
-from typing import Dict, List
-
-date_lists = [
-    {"id": 41428829, "state": "EXECUTED", "date": "2019-07-03T18:35:29.512364"},
-    {"id": 939719570, "state": "EXECUTED", "date": "2018-06-30T02:08:58.425572"},
-    {"id": 594226727, "state": "CANCELED", "date": "2018-09-12T21:27:25.241689"},
-    {"id": 615064591, "state": "CANCELED", "date": "2018-10-14T08:21:33.419441"},
-]
+from typing import Any, Dict, List
 
 
-def filter_by_state(date_list: list[dict], state: str = "EXECUTED") -> list[dict]:
-    """Возвращает словари по указанному значению"""
-    new_list = []
-    for item in date_list:
-        if isinstance(item, dict) and item.get("state") == state:
-            new_list.append(item)
-    return new_list
+def filter_by_state(
+    operations: List[Dict[str, Any]], state: str = "EXECUTED"
+) -> List[Dict[str, Any]]:
+    """
+    Фильтрует список операций по статусу.
+
+    Args:
+        operations (List[Dict[str, Any]]): Список операций (словарей)
+        state (str, optional): Статус для фильтрации. По умолчанию "EXECUTED".
+
+    Returns:
+        List[Dict[str, Any]]: Отфильтрованный список операций
+    """
+    return [operation for operation in operations if operation.get("state") == state]
 
 
-def filter_by_states(data: List[Dict], state: str = "EXECUTED") -> List[Dict]:
-    """Фильтрует список словарей по значению ключа 'state'"""
-    if not isinstance(data, list):
-        raise TypeError("Входные данные должны быть списком")
+def sort_by_date(
+    operations: List[Dict[str, Any]], reverse: bool = True
+) -> List[Dict[str, Any]]:
+    """
+    Сортирует список операций по дате.
 
-    return [
-        item for item in data if isinstance(item, dict) and item.get("state") == state
-    ]
+    Args:
+        operations (List[Dict[str, Any]]): Список операций (словарей)
+        reverse (bool, optional): Порядок сортировки (True - по убыванию, False - по возрастанию).
+                                  По умолчанию True.
 
-
-def sort_by_date(data: List[Dict], reverse: bool = True) -> List[Dict]:
-    """Сортирует список словарей по дате"""
-    if not isinstance(data, list):
-        raise TypeError("Входные данные должны быть списком")
-
-    try:
-        return sorted(
-            data, key=lambda x: datetime.fromisoformat(x["date"]), reverse=reverse
-        )
-    except (KeyError, ValueError) as e:
-        raise ValueError(f"Некорректный формат даты: {e}")
-
-
-print("Функция возвращает словари по заданному значению")
-print(filter_by_state(date_lists))
-print(filter_by_state(date_lists, "CANCELED"))
-
-
-print("Функция сортирует по убыванию (новые - старые)")
-print(sort_by_date(date_lists))
-
-print("Функция сортирует по возрастанию (старые - новые)")
-print(sort_by_date(date_lists, reverse=False))
+    Returns:
+        List[Dict[str, Any]]: Отсортированный список операций
+    """
+    return sorted(operations, key=lambda x: x["date"], reverse=reverse)

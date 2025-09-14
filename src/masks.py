@@ -1,172 +1,98 @@
 import logging
+import os
 from typing import Union
 
-# Создаем и настраиваем логер для модуля masks
+# Создаем папку logs, если она не существует
+os.makedirs("logs", exist_ok=True)
+
+# Настройка логера для модуля masks
 logger = logging.getLogger("masks")
 logger.setLevel(logging.DEBUG)
 
-# Создаем file handler с указанием кодировки UTF-8
+# Создаем file_handler для записи логов в файл с указанием кодировки UTF-8
 file_handler = logging.FileHandler("logs/masks.log", mode="w", encoding="utf-8")
 file_handler.setLevel(logging.DEBUG)
 
-# Создаем форматтер
+# Создаем formatter для определения формата записей логов
 file_formatter = logging.Formatter(
-    "%(asctime)s - %(name)s - %(levelname)s - %(message)s", datefmt="%Y-%m-%d %H:%M:%S"
+    "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
-
 file_handler.setFormatter(file_formatter)
+
+# Добавляем handler к логеру
 logger.addHandler(file_handler)
 
+# Отключаем распространение логов в корневой логер
+logger.propagate = False
 
-def get_mask_card_number(card_number: Union[str, int]) -> str:
+
+def get_mask_card_number(card_number: Union[int, str]) -> str:
     """
-    Функция принимает на вход номер карты и возвращает ее маску.
+    Маскирует номер банковской карты в формате XXXX XX** **** XXXX.
 
     Args:
-        card_number: Номер карты в виде строки или числа
+        card_number (int | str): Номер карты как целое число или строка.
 
     Returns:
-        str: Замаскированный номер карты
+        str: Замаскированный номер карты.
 
     Raises:
-        AttributeError: Если номер карты None
-        ValueError: Если номер карты пустой или содержит меньше 6 цифр
+        ValueError: Если номер карты не содержит 16 цифр или содержит недопустимые символы.
     """
-    try:
-        logger.debug(f"Начало маскировки номера карты: {card_number}")
+    str_number = str(card_number).replace(" ", "")
 
-        if card_number is None:
-            error_msg = "Номер карты не может быть None"
-            logger.error(error_msg)
-            raise AttributeError(error_msg)
+    # Проверяем, что строка не пустая
+    if not str_number:
+        logger.error("Получена пустая строка для маскирования карты")
+        raise ValueError("Номер карты должен содержать 16 цифр")
 
-        card_str = str(card_number).strip()
+    # Проверяем, что строка состоит только из цифр
+    if not str_number.isdigit():
+        logger.error("Номер карты содержит недопустимые символы: %s", str_number)
+        raise ValueError("Номер карты должен содержать только цифры")
 
-        if not card_str:
-            error_msg = "Номер карты не может быть пустым"
-            logger.error(error_msg)
-            raise ValueError(error_msg)
-
-        # Извлекаем только цифры
-        digits = [c for c in card_str if c.isdigit()]
-
-        if len(digits) < 6:
-            error_msg = "Номер карты должен содержать минимум 6 цифр"
-            logger.error(error_msg)
-            raise ValueError(error_msg)
-
-        # Находим начало и конец цифровой части
-        first_digit_pos = next((i for i, c in enumerate(card_str) if c.isdigit()), 0)
-        last_digit_pos = len(card_str) - next(
-            (i for i, c in enumerate(reversed(card_str)) if c.isdigit()), 0
+    # Проверяем длину номера карты
+    if len(str_number) != 16:
+        logger.error(
+            "Номер карты имеет неправильную длину: %d вместо 16", len(str_number)
         )
+        raise ValueError("Номер карты должен содержать 16 цифр")
 
-        # Разделяем на префикс, цифры и суффикс
-        prefix = card_str[:first_digit_pos]
-        suffix = card_str[last_digit_pos:]
-
-        # Формируем маскированную часть
-        masked_digits = f"{''.join(digits[:4])} {''.join(digits[4:6])}** **** {''.join(digits[-4:])}"
-
-        result = f"{prefix}{masked_digits}{suffix}"
-        logger.info(f"Успешно замаскирован номер карты: {result}")
-
-        return result
-
-    except (AttributeError, ValueError):
-        # Эти ошибки уже залогированы выше, просто пробрасываем дальше
-        raise
-    except Exception as e:
-        error_msg = f"Неожиданная ошибка при маскировке номера карты {card_number}: {e}"
-        logger.critical(error_msg)
-        raise RuntimeError(error_msg) from e
+    logger.info("Успешно замаскирован номер карты: %s", str_number)
+    return f"{str_number[:4]} {str_number[4:6]}** **** {str_number[-4:]}"
 
 
-def get_mask_account(account_number: Union[str, int]) -> str:
+def get_mask_account(account_number: Union[int, str]) -> str:
     """
-    Функция принимает на вход номер счета и возвращает его маску.
+    Маскирует номер счета в формате **XXXX.
 
     Args:
-        account_number: Номер счета в виде строки или числа
+        account_number (int | str): Номер счета как целое число или строка.
 
     Returns:
-        str: Замаскированный номер счета
+        str: Замаскированный номер счета.
 
     Raises:
-        AttributeError: Если номер счета None
-        ValueError: Если номер счета пустой или не содержит цифр
+        ValueError: Если номер счета содержит менее 4 цифр или содержит недопустимые символы.
     """
-    try:
-        logger.debug(f"Начало маскировки номера счета: {account_number}")
+    str_number = str(account_number).replace(" ", "")
 
-        if account_number is None:
-            error_msg = "Номер счета не может быть None"
-            logger.error(error_msg)
-            raise AttributeError(error_msg)
+    # Проверяем, что строка не пустая
+    if not str_number:
+        logger.error("Получена пустая строка для маскирования счета")
+        raise ValueError("Номер счета должен содержать минимум 4 цифры")
 
-        account_str = str(account_number).strip()
+    # Проверяем, что строка состоит только из цифр
+    if not str_number.isdigit():
+        logger.error("Номер счета содержит недопустимые символы: %s", str_number)
+        raise ValueError("Номер счета должен содержать только цифры")
 
-        if not account_str:
-            error_msg = "Номер счета не может быть пустым"
-            logger.error(error_msg)
-            raise ValueError(error_msg)
-
-        # Извлекаем только цифры из номера
-        digits = [c for c in account_str if c.isdigit()]
-
-        if not digits:
-            error_msg = "Номер счета должен содержать цифры"
-            logger.error(error_msg)
-            raise ValueError(error_msg)
-
-        # Берем последние 4 цифры
-        last_four = "".join(digits[-4:]) if len(digits) >= 4 else "".join(digits)
-
-        result = f"Счет **{last_four}"
-        logger.info(f"Успешно замаскирован номер счета: {result}")
-
-        return result
-
-    except (AttributeError, ValueError):
-        # Эти ошибки уже залогированы выше, просто пробрасываем дальше
-        raise
-    except Exception as e:
-        error_msg = (
-            f"Неожиданная ошибка при маскировке номера счета {account_number}: {e}"
+    # Проверяем длину номера счета
+    if len(str_number) < 4:
+        logger.error(
+            "Номер счета имеет неправильную длину: %d вместо минимум 4", len(str_number)
         )
-        logger.critical(error_msg)
-        raise RuntimeError(error_msg) from e
+        raise ValueError("Номер счета должен содержать минимум 4 цифры")
 
-
-# Примеры использования с логированием
-if __name__ == "__main__":
-    try:
-        # Пример вызова функции для маскирования номера карты
-        masked_card = get_mask_card_number("1234567812345678")
-        print(masked_card)
-
-        # Пример с префиксом
-        masked_card_with_prefix = get_mask_card_number("Visa 1234567890123456")
-        print(masked_card_with_prefix)
-
-        # Пример вызова функции для маскирования счета
-        masked_account = get_mask_account("12345678901234567890")
-        print(masked_account)
-
-        # Пример с префиксом "Счет"
-        masked_account_with_prefix = get_mask_account("Счет 1234567890123456")
-        print(masked_account_with_prefix)
-
-        # Примеры с ошибками (для тестирования логирования)
-        try:
-            get_mask_card_number("")  # Пустая строка
-        except ValueError:
-            pass
-
-        try:
-            get_mask_card_number("123")  # Слишком короткий номер
-        except ValueError:
-            pass
-
-    except Exception as e:
-        logger.error(f"Ошибка в основном блоке: {e}")
+    logger.info("Успешно замаскирован номер счета: %s", str_number)
+    return f"**{str_number[-4:]}"
